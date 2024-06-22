@@ -66,3 +66,43 @@ def agregar_tarea():
     except Exception as e:
         basedatos.session.rollback()
         return jsonify({'mensaje': 'Error al agregar la tarea', 'error': str(e)}), 500
+
+@app.route('/tareas/<int:id>', methods=['PUT'])
+def actualizar_tarea(id):
+    try:
+        tarea = Tarea.query.get(id)
+        if not tarea:
+            return jsonify({'mensaje': 'Tarea no encontrada'}), 404
+        
+        tarea.descripcion = request.json['descripcion']
+        fecha_vencimiento_str = request.json['fecha_vencimiento']
+        
+        tarea.fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%d-%m-%Y').date()
+        
+        basedatos.session.commit()
+        
+        return tarea_schema.jsonify(tarea), 200
+    except ValueError:
+        basedatos.session.rollback()
+        return jsonify({'mensaje': 'Formato de fecha incorrecto. Debe ser DD-MM-YYYY.'}), 400
+    except Exception as e:
+        basedatos.session.rollback()
+        return jsonify({'mensaje': 'Error al actualizar la tarea', 'error': str(e)}), 500
+
+@app.route('/tareas/<int:id>', methods=['DELETE'])
+def eliminar_tarea(id):
+    try:
+        tarea = Tarea.query.get(id)
+        if not tarea:
+            return jsonify({'mensaje': 'Tarea no encontrada'}), 404
+        
+        basedatos.session.delete(tarea)
+        basedatos.session.commit()
+        
+        return tarea_schema.jsonify(tarea), 200
+    except Exception as e:
+        basedatos.session.rollback()
+        return jsonify({'mensaje': 'Error al eliminar la tarea', 'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
